@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>KeepBalance — Чеклист готовности к релизу</title>
+<style>
+  :root {
+    --bg: #f3f0ea;
+    --bg-elevated: #fffdf9;
+    --ink: #1c1a17;
+    --ink-muted: #5c574f;
+    --ink-faint: #8a847a;
+    --line: #ddd6cb;
+    --line-strong: #c9c0b2;
+    --accent: #0f6b5c;
+    --accent-soft: #e4f3ef;
+    --accent-ink: #0a4f44;
+    --warn: #9a5b16;
+    --warn-soft: #f8ead6;
+    --done: #1f7a4d;
+    --shadow: 0 1px 2px rgba(28, 26, 23, 0.06), 0 8px 24px rgba(28, 26, 23, 0.05);
+    --radius: 14px;
+    --font: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161412;
+      --bg-elevated: #1f1c19;
+      --ink: #f4efe7;
+      --ink-muted: #b7b0a5;
+      --ink-faint: #8a8378;
+      --line: #342f2a;
+      --line-strong: #4a433b;
+      --accent: #4db8a5;
+      --accent-soft: #1a322d;
+      --accent-ink: #b7ebe0;
+      --warn: #e0a55a;
+      --warn-soft: #322618;
+      --done: #6dca96;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px rgba(0, 0, 0, 0.28);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: var(--font);
+    color: var(--ink);
+    background:
+      radial-gradient(1200px 500px at 10% -10%, rgba(15, 107, 92, 0.08), transparent 60%),
+      radial-gradient(900px 420px at 100% 0%, rgba(154, 91, 22, 0.07), transparent 55%),
+      var(--bg);
+    min-height: 100vh;
+    line-height: 1.45;
+  }
+
+  .wrap {
+    width: min(920px, calc(100% - 28px));
+    margin: 0 auto;
+    padding: 28px 0 64px;
+  }
+
+  header.hero {
+    display: grid;
+    gap: 18px;
+    margin-bottom: 22px;
+  }
+
+  .brand-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    display: grid;
+    gap: 6px;
+  }
+
+  .brand-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-size: 1.55rem;
+  }
+
+  .logo {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: linear-gradient(145deg, #127a69, #0b4f44);
+    color: #f7fffc;
+    display: grid;
+    place-items: center;
+    font-size: 0.95rem;
+    font-weight: 800;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
+  }
+
+  .subtitle {
+    color: var(--ink-muted);
+    max-width: 46ch;
+    margin: 0;
+    font-size: 0.98rem;
+  }
+
+  .overall {
+    background: var(--bg-elevated);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px 18px;
+    min-width: min(280px, 100%);
+  }
+
+  .overall-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .overall-label {
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+    font-weight: 700;
+  }
+
+  .overall-pct {
+    font-size: 1.8rem;
+    font-weight: 750;
+    letter-spacing: -0.03em;
+    color: var(--accent-ink);
+  }
+
+  .overall-meta {
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+  }
+
+  .bar {
+    height: 10px;
+    background: color-mix(in srgb, var(--line) 70%, transparent);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .bar > span {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #0f6b5c, #2f9b84);
+    border-radius: inherit;
+    transition: width 0.25s ease;
+  }
+
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 18px;
+  }
+
+  .toolbar .spacer { flex: 1; min-width: 8px; }
+
+  button, .file-btn {
+    appearance: none;
+    border: 1px solid var(--line-strong);
+    background: var(--bg-elevated);
+    color: var(--ink);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  }
+
+  button:hover, .file-btn:hover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  button:active, .file-btn:active { transform: translateY(1px); }
+
+  button.primary {
+    background: var(--accent);
+    border-color: transparent;
+    color: #f7fffc;
+  }
+
+  button.primary:hover {
+    filter: brightness(1.05);
+    background: var(--accent);
+  }
+
+  button.danger {
+    color: #8b2e2e;
+    border-color: #d6b0b0;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    button.danger { color: #f0a8a8; border-color: #6a3d3d; }
+    button.primary { color: #061511; }
+  }
+
+  .saved {
+    color: var(--ink-faint);
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  .file-btn { display: inline-flex; align-items: center; }
+  .file-btn input { display: none; }
+
+  .list {
+    display: grid;
+    gap: 12px;
+  }
+
+  details.category {
+    background: var(--bg-elevated);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: clip;
+  }
+
+  details.category[open] {
+    border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+  }
+
+  summary.cat-summary {
+    list-style: none;
+    cursor: pointer;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 14px 16px;
+    user-select: none;
+  }
+
+  summary.cat-summary::-webkit-details-marker { display: none; }
+
+  .chev {
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    border: 1px solid var(--line);
+    display: grid;
+    place-items: center;
+    color: var(--ink-muted);
+    transition: transform 0.2s ease, background 0.15s ease;
+    flex-shrink: 0;
+  }
+
+  details[open] .chev { transform: rotate(90deg); background: var(--accent-soft); color: var(--accent-ink); }
+
+  .cat-title-wrap { min-width: 0; }
+  .cat-title {
+    font-weight: 700;
+    font-size: 1.02rem;
+    letter-spacing: -0.01em;
+  }
+  .cat-desc {
+    color: var(--ink-muted);
+    font-size: 0.86rem;
+    margin-top: 2px;
+  }
+
+  .cat-progress {
+    text-align: right;
+    min-width: 88px;
+  }
+
+  .cat-count {
+    font-size: 0.84rem;
+    color: var(--ink-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cat-bar {
+    width: 88px;
+    height: 6px;
+    margin-top: 6px;
+    margin-left: auto;
+    background: color-mix(in srgb, var(--line) 80%, transparent);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .cat-bar > span {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    transition: width 0.25s ease;
+  }
+
+  .items {
+    border-top: 1px solid var(--line);
+    padding: 6px 10px 12px;
+    display: grid;
+    gap: 2px;
+  }
+
+  .item {
+    display: grid;
+    grid-template-columns: 22px 1fr;
+    gap: 10px;
+    align-items: start;
+    padding: 10px 8px;
+    border-radius: 10px;
+  }
+
+  .item:hover { background: color-mix(in srgb, var(--accent-soft) 55%, transparent); }
+
+  .item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .item label {
+    cursor: pointer;
+    font-size: 0.95rem;
+  }
+
+  .item.done label {
+    color: var(--ink-muted);
+  }
+
+  .item-id {
+    display: block;
+    margin-top: 3px;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.01em;
+  }
+
+  footer.note {
+    margin-top: 22px;
+    color: var(--ink-faint);
+    font-size: 0.84rem;
+    display: grid;
+    gap: 4px;
+  }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: var(--bg);
+    padding: 10px 14px;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 20;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  @media (max-width: 640px) {
+    .wrap { width: min(100% - 20px, 920px); padding-top: 18px; }
+    .overall { width: 100%; }
+    .overall-pct { font-size: 1.55rem; }
+    summary.cat-summary {
+      grid-template-columns: auto 1fr;
+      grid-template-areas:
+        "chev title"
+        "chev progress";
+      gap: 8px 12px;
+    }
+    .chev { grid-area: chev; align-self: start; margin-top: 2px; }
+    .cat-title-wrap { grid-area: title; }
+    .cat-progress {
+      grid-area: progress;
+      text-align: left;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .cat-bar { margin: 0; width: 72px; }
+    .toolbar { gap: 6px; }
+    button, .file-btn { padding: 8px 10px; font-size: 0.86rem; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <div class="brand-row">
+        <div class="brand">
+          <div class="brand-mark">
+            <span class="logo" aria-hidden="true">KB</span>
+            <span>KeepBalance</span>
+          </div>
+          <p class="subtitle">Чеклист готовности к запуску iOS-приложения для Ивана и Ульяны. Отмечайте пункты — прогресс сохраняется локально в браузере.</p>
+        </div>
+        <div class="overall" aria-live="polite">
+          <div class="overall-top">
+            <div class="overall-label">Готовность</div>
+            <div class="overall-pct" id="overallPct">0%</div>
+          </div>
+          <div class="overall-meta"><span id="overallCount">0 / 0</span> пунктов выполнено</div>
+          <div class="bar" aria-hidden="true"><span id="overallBar"></span></div>
+        </div>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <button type="button" id="expandAll">Развернуть всё</button>
+      <button type="button" id="collapseAll">Свернуть всё</button>
+      <button type="button" id="expandIncomplete">Только незавершённые</button>
+      <span class="spacer"></span>
+      <button type="button" id="exportBtn">Экспорт JSON</button>
+      <label class="file-btn">Импорт JSON<input type="file" id="importFile" accept="application/json,.json" /></label>
+      <button type="button" class="danger" id="resetBtn" title="Сбросить все отметки">Сброс</button>
+      <span class="saved" id="savedAt">Ещё не сохранялось</span>
+    </div>
+
+    <div class="list" id="checklist"></div>
+
+    <footer class="note">
+      <div>Данные хранятся только в localStorage этого браузера (ключ <code>keepbalance.launchChecklist.v1</code>). Файл можно открывать офлайн.</div>
+      <div>Стабильные id пунктов сохраняют отметки при обновлении формулировок. Для бэкапа используйте экспорт JSON.</div>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    const STORAGE_KEY = "keepbalance.launchChecklist.v1";
+
+    /** @type {{id:string,title:string,desc:string,items:{id:string,text:string}[]}[]} */
+    const CATEGORIES = [
+      {
+        id: "design",
+        title: "Доработка дизайна UX/UI",
+        desc: "Темы, тапы, скорость, иконки, типографика, пустые состояния, accessibility",
+        items: [
+          { id: "design.themes.light-dark", text: "Светлая и тёмная темы согласованы во всех экранах (деньги, Focus, Health, Legal)" },
+          { id: "design.themes.system-follow", text: "Следование системной теме и ручное переключение работают без «вспышек»" },
+          { id: "design.typography.scale", text: "Типографика: иерархия заголовков/сумм, Dynamic Type не ломает вёрстку" },
+          { id: "design.icons.consistency", text: "Иконки SF Symbols / кастомные единообразны по размеру, весу и смыслу" },
+          { id: "design.app-icon.assets", text: "Иконка приложения: все размеры, светлая/тёмная/tinted варианты для iOS" },
+          { id: "design.tap.targets", text: "Зоны тапа ≥ 44pt, нет «мёртвых» зон на списках и кнопках" },
+          { id: "design.tap.feedback", text: "Haptic / визуальный отклик на ключевые действия (сохранить, подтвердить, удалить)" },
+          { id: "design.speed.perceived", text: "Ощущаемая скорость: скелетоны/плейсхолдеры, нет долгих пустых экранов" },
+          { id: "design.navigation.clarity", text: "Навигация понятна: таб-бар / стеки, back, deep links в нужные разделы" },
+          { id: "design.empty-states", text: "Пустые состояния для баланса, транзакций, Focus, Health, Legal с понятным CTA" },
+          { id: "design.error-states", text: "Ошибки сети/сохранения показаны человеческим языком + retry" },
+          { id: "design.loading-states", text: "Состояния загрузки не блокируют весь UI без необходимости" },
+          { id: "design.a11y.voiceover", text: "VoiceOver: метки, порядок фокуса, доступные имена кнопок и сумм" },
+          { id: "design.a11y.contrast", text: "Контраст текста и иконок в light/dark соответствует WCAG-разумному минимуму" },
+          { id: "design.a11y.reduce-motion", text: "Учтены Reduce Motion / Bold Text где анимации заметны" },
+          { id: "design.forms.money-input", text: "Ввод сумм: локаль, десятичный разделитель, валидация, удобная клавиатура" },
+          { id: "design.safe-areas", text: "Safe Area / Dynamic Island / home indicator — контент не обрезается" },
+          { id: "design.ipad-or-phone", text: "Проверка на основных размерах iPhone (и iPad, если поддерживается)" }
+        ]
+      },
+      {
+        id: "testing",
+        title: "Дотестировка",
+        desc: "Persistence, совместное использование, offline, миграции, edge cases",
+        items: [
+          { id: "testing.persist.after-kill", text: "Данные сохраняются после полного закрытия приложения (force quit)" },
+          { id: "testing.persist.after-reboot", text: "Данные на месте после перезагрузки устройства / переустановки с бэкапом" },
+          { id: "testing.shared.couple-flow", text: "Совместное использование: приглашение, принятие, общий баланс / роли" },
+          { id: "testing.shared.after-unlink", text: "После разъединения пользователей: чьи данные остаются, что очищается, нет «призраков»" },
+          { id: "testing.shared.conflict", text: "Конфликты правок с двух устройств разрешаются предсказуемо" },
+          { id: "testing.offline.create-edit", text: "Offline: создание/редактирование записей, очередь синка при появлении сети" },
+          { id: "testing.offline.indicators", text: "Индикатор offline / pending sync понятен пользователю" },
+          { id: "testing.migrations.schema", text: "Миграции схемы (Core Data / SwiftData / файлы) с предыдущих версий" },
+          { id: "testing.migrations.corrupt", text: "Поведение при повреждённом локальном хранилище: recovery, без краша" },
+          { id: "testing.edge.zero-negative", text: "Edge cases: нулевые/отрицательные суммы, очень большие числа, пустые названия" },
+          { id: "testing.edge.timezone-locale", text: "Часовые пояса, смена даты, локаль RU/EN, календарь" },
+          { id: "testing.edge.background", text: "Background / multitasking: возврат в приложение не теряет черновик" },
+          { id: "testing.modules.focus", text: "Focus: сценарии создания, завершения, отображения в балансе/статистике" },
+          { id: "testing.modules.health", text: "Health: корректность данных, разрешения, отказ в доступе" },
+          { id: "testing.modules.legal", text: "Legal: отображение документов, версии, ссылки наружу" },
+          { id: "testing.regression.smoke", text: "Smoke-регресс критического пути: онбординг → запись → просмотр → шаринг" },
+          { id: "testing.devices.matrix", text: "Матрица устройств: минимум 2 модели iPhone + актуальная iOS / предыдущая major" },
+          { id: "testing.crash-free", text: "Нет известных крашей; Crashlytics/аналог пуст или triage закрыт" }
+        ]
+      },
+      {
+        id: "data-sync",
+        title: "Данные и синхронизация",
+        desc: "Shared-модуль, CloudKit/бэкенд, целостность баланса",
+        items: [
+          { id: "data.shared-module.api", text: "Shared-модуль: публичный API стабилен для App / Widgets / extensions" },
+          { id: "data.model.balance-invariants", text: "Инварианты баланса: сумма транзакций сходится с отображаемым итогом" },
+          { id: "data.sync.auth-identity", text: "Идентичность пользователя (Apple ID / аккаунт) привязана к данным корректно" },
+          { id: "data.sync.first-login", text: "Первый вход / восстановление: подтягивание облачных данных без дублей" },
+          { id: "data.sync.logout", text: "Выход из аккаунта очищает или изолирует локальный кэш ожидаемо" },
+          { id: "data.backup.export", text: "Экспорт данных пользователем (если в продукте) или понятная политика бэкапа" },
+          { id: "data.delete.account", text: "Удаление аккаунта / данных соответствует политике App Store" },
+          { id: "data.currency.multi", text: "Валюта(ы): форматирование, смена валюты, округление" },
+          { id: "data.categories.taxonomy", text: "Категории/теги расходов: CRUD, миграция переименований" },
+          { id: "data.concurrency.actors", text: "Потокобезопасность Shared / persistence (MainActor, фоновые задачи)" }
+        ]
+      },
+      {
+        id: "security",
+        title: "Безопасность и приватность",
+        desc: "Хранение секретов, Face ID, privacy strings",
+        items: [
+          { id: "security.keychain.tokens", text: "Токены/секреты только в Keychain, не в UserDefaults" },
+          { id: "security.app-lock", text: "Блокировка приложения (Face ID / код) если есть чувствительные данные" },
+          { id: "security.screenshots.sensitive", text: "Скрытие чувствительных данных в App Switcher / скриншотах где уместно" },
+          { id: "security.ats.https", text: "ATS / только HTTPS; нет небезопасных exception без обоснования" },
+          { id: "security.logging.pii", text: "Логи не содержат PII, суммы/имена не уходят в аналитику без согласия" },
+          { id: "security.privacy.usage-strings", text: "Privacy usage descriptions в Info.plist точные и на русском/английском" },
+          { id: "security.clipboard", text: "Буфер обмена: не оставляем суммы/токены дольше необходимого" },
+          { id: "security.third-party.sdks", text: "Сторонние SDK проверены на трекинг и минимально необходимы" }
+        ]
+      },
+      {
+        id: "performance",
+        title: "Производительность",
+        desc: "Старт, списки, память, батарея",
+        items: [
+          { id: "perf.launch.cold", text: "Cold start приемлемый на целевых устройствах" },
+          { id: "perf.lists.scroll", text: "Длинные списки транзакций скроллятся без фризов (lazy load / pagination)" },
+          { id: "perf.memory.leaks", text: "Нет явных retain cycle / утечек на основных экранах" },
+          { id: "perf.battery.background", text: "Фоновые задачи не жрут батарею без пользы" },
+          { id: "perf.images.assets", text: "Ассеты оптимизированы (веса, PDF/SVG/Symbol где возможно)" },
+          { id: "perf.instruments.sample", text: "Прогон Instruments (Time Profiler / Allocations) на типовом сценарии" }
+        ]
+      },
+      {
+        id: "onboarding",
+        title: "Онбординг и первый опыт",
+        desc: "Первый запуск, права доступа, обучение",
+        items: [
+          { id: "onboarding.first-launch", text: "Первый запуск: ценность KeepBalance за 1–2 экрана, без перегруза" },
+          { id: "onboarding.permissions.timing", text: "Запросы разрешений (уведомления, Health и т.д.) в контексте, не стеной при старте" },
+          { id: "onboarding.sample-data", text: "Опциональные демо-данные или guided empty state" },
+          { id: "onboarding.couple-invite", text: "Онбординг совместного режима понятен обоим партнёрам" },
+          { id: "onboarding.skip-return", text: "Можно пропустить и вернуться к подсказкам позже" },
+          { id: "onboarding.localization", text: "Онбординг полностью на RU (и EN, если включён)" }
+        ]
+      },
+      {
+        id: "widgets",
+        title: "Виджеты и расширения",
+        desc: "Home Screen / Lock Screen, Shared, App Groups",
+        items: [
+          { id: "widgets.home.balance", text: "Виджет баланса: актуальные данные, размеры small/medium (и large если есть)" },
+          { id: "widgets.lock-screen", text: "Lock Screen виджеты (если заявлены) корректны и читаемы" },
+          { id: "widgets.app-group", text: "App Group / Shared container: виджет видит те же данные, что и App" },
+          { id: "widgets.refresh.timeline", text: "Timeline refresh: данные обновляются без «вчерашнего» баланса слишком долго" },
+          { id: "widgets.deep-link", text: "Тап по виджету открывает нужный экран приложения" },
+          { id: "widgets.themes", text: "Виджеты выглядят нормально в light/dark и на цветных обоях" },
+          { id: "widgets.privacy.redaction", text: "Redacted / placeholder виджеты при необходимости (приватность)" }
+        ]
+      },
+      {
+        id: "appstore-assets",
+        title: "Скриншоты и описание для App Store",
+        desc: "Ассеты, локализация RU/EN, keywords, privacy",
+        items: [
+          { id: "store.screenshots.iphone", text: "Скриншоты для актуальных размеров iPhone (6.9\" / 6.7\" / 6.5\" и т.д. по требованиям)" },
+          { id: "store.screenshots.story", text: "Скриншоты рассказывают историю: баланс, совместный режим, Focus/Health если в продукте" },
+          { id: "store.preview.video", text: "App Preview видео (опционально) или решение сознательно не делать" },
+          { id: "store.copy.ru", text: "Название, подзаголовок, описание на русском" },
+          { id: "store.copy.en", text: "Название, подзаголовок, описание на английском (если локаль включена)" },
+          { id: "store.keywords", text: "Keywords без спама, релевантные поиску KeepBalance / семейный бюджет" },
+          { id: "store.whats-new", text: "What's New для первого релиза подготовлен" },
+          { id: "store.privacy.policy-url", text: "URL политики конфиденциальности доступен и актуален" },
+          { id: "store.support.url", text: "Support URL / контакт поддержки работает" },
+          { id: "store.category.age", text: "Категория, возрастной рейтинг, лицензионное соглашение выбраны" },
+          { id: "store.promotional.text", text: "Промо-текст / marketing URL при необходимости" }
+        ]
+      },
+      {
+        id: "apple-release",
+        title: "Apple Developer / релиз",
+        desc: "Подписка, Sign in with Apple, TestFlight, Review, certificates",
+        items: [
+          { id: "apple.dev-account.active", text: "Подписка Apple Developer Program активна у нужного аккаунта" },
+          { id: "apple.bundle-id", text: "Bundle ID, Display Name, Version / Build согласованы" },
+          { id: "apple.team.signing", text: "Signing: Team, Certificates, Provisioning Profiles валидны" },
+          { id: "apple.capabilities", text: "Capabilities включены только нужные (iCloud, Push, HealthKit, App Groups…)" },
+          { id: "apple.siwa", text: "Sign in with Apple реализован и протестирован (если есть любой другой login)" },
+          { id: "apple.asc.app-record", text: "Запись приложения в App Store Connect создана" },
+          { id: "apple.testflight.internal", text: "TestFlight: внутреннее тестирование пройдено Иваном/Ульяной" },
+          { id: "apple.testflight.external", text: "TestFlight: внешняя группа (если нужна) и Beta App Review" },
+          { id: "apple.review.checklist", text: "App Review: демо-аккаунт, заметки ревьюеру, объяснение совместного режима" },
+          { id: "apple.privacy.nutrition", text: "Privacy Nutrition Labels заполнены честно (сбор данных / tracking)" },
+          { id: "apple.encryption.export", text: "Export compliance / шифрование отмечены корректно" },
+          { id: "apple.ads.tracking", text: "ATT / tracking: если нет рекламы — не запрашивать лишнее" },
+          { id: "apple.release.phased", text: "Стратегия релиза: phased release / ручной релиз после approve" }
+        ]
+      },
+      {
+        id: "legal",
+        title: "Юридическое",
+        desc: "Документы в приложении и для магазина",
+        items: [
+          { id: "legal.privacy-policy", text: "Политика конфиденциальности актуальна под KeepBalance (данные пары, Health и т.д.)" },
+          { id: "legal.terms", text: "Условия использования / Terms при необходимости" },
+          { id: "legal.in-app.links", text: "В приложении есть доступ к Legal-документам (раздел Legal)" },
+          { id: "legal.health-disclaimer", text: "Дисклеймер Health (не медсовет), если показываются health-метрики" },
+          { id: "legal.finance-disclaimer", text: "Дисклеймер: приложение не является банковским/инвест-советом" },
+          { id: "legal.third-party.licenses", text: "Лицензии open-source / third-party учтены" }
+        ]
+      },
+      {
+        id: "release-gate",
+        title: "Финальный релиз-гейт",
+        desc: "Последний проход перед Submit for Review",
+        items: [
+          { id: "gate.version.bump", text: "Версия и build number для релиза выставлены" },
+          { id: "gate.release-notes.internal", text: "Внутренний changelog для Ивана/Ульяны готов" },
+          { id: "gate.checklist.walkthrough", text: "Полный проход этого чеклиста: критичные категории ≥ целевого порога" },
+          { id: "gate.archive.upload", text: "Archive → Upload в App Store Connect без warnings-блокеров" },
+          { id: "gate.metadata.final", text: "Метаданные, скриншоты, privacy labels финально сверены" },
+          { id: "gate.submit.review", text: "Submit for Review нажат; статус отслеживается" },
+          { id: "gate.post-approve", text: "План после approve: когда публикуем, кого пингуем, мониторинг крашей" },
+          { id: "gate.rollback", text: "План на reject / hotfix (кто правит, как быстро новый build)" }
+        ]
+      }
+    ];
+
+    const checklistEl = document.getElementById("checklist");
+    const overallPct = document.getElementById("overallPct");
+    const overallCount = document.getElementById("overallCount");
+    const overallBar = document.getElementById("overallBar");
+    const savedAtEl = document.getElementById("savedAt");
+    const toastEl = document.getElementById("toast");
+
+    /** @type {Record<string, boolean>} */
+    let checked = {};
+    /** @type {string|null} */
+    let lastSavedISO = null;
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (data && typeof data === "object") {
+          checked = data.checked && typeof data.checked === "object" ? data.checked : {};
+          lastSavedISO = typeof data.savedAt === "string" ? data.savedAt : null;
+        }
+      } catch (e) {
+        console.warn("Не удалось прочитать localStorage", e);
+      }
+    }
+
+    function saveState() {
+      const savedAt = new Date().toISOString();
+      lastSavedISO = savedAt;
+      const payload = {
+        version: 1,
+        app: "KeepBalance",
+        savedAt,
+        checked: { ...checked }
+      };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        renderSavedAt();
+      } catch (e) {
+        showToast("Не удалось сохранить");
+        console.warn(e);
+      }
+    }
+
+    function formatSavedAt(iso) {
+      if (!iso) return "Ещё не сохранялось";
+      try {
+        const d = new Date(iso);
+        return "Сохранено: " + d.toLocaleString("ru-RU", {
+          day: "2-digit", month: "short", year: "numeric",
+          hour: "2-digit", minute: "2-digit", second: "2-digit"
+        });
+      } catch {
+        return "Сохранено";
+      }
+    }
+
+    function renderSavedAt() {
+      savedAtEl.textContent = formatSavedAt(lastSavedISO);
+    }
+
+    let toastTimer = null;
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove("show"), 1800);
+    }
+
+    function build() {
+      const frag = document.createDocumentFragment();
+      CATEGORIES.forEach((cat, index) => {
+        const details = document.createElement("details");
+        details.className = "category";
+        details.dataset.categoryId = cat.id;
+        if (index === 0) details.open = true;
+
+        const summary = document.createElement("summary");
+        summary.className = "cat-summary";
+        summary.innerHTML = `
+          <span class="chev" aria-hidden="true">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 1.5L7 5L3 8.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="cat-title-wrap">
+            <div class="cat-title">${escapeHtml(cat.title)}</div>
+            <div class="cat-desc">${escapeHtml(cat.desc)}</div>
+          </span>
+          <span class="cat-progress">
+            <div class="cat-count" data-cat-count="${cat.id}">0 / ${cat.items.length}</div>
+            <div class="cat-bar" aria-hidden="true"><span data-cat-bar="${cat.id}"></span></div>
+          </span>
+        `;
+
+        const itemsWrap = document.createElement("div");
+        itemsWrap.className = "items";
+        itemsWrap.setAttribute("role", "group");
+        itemsWrap.setAttribute("aria-label", cat.title);
+
+        cat.items.forEach((item) => {
+          const row = document.createElement("div");
+          row.className = "item";
+          row.dataset.itemId = item.id;
+          const isChecked = !!checked[item.id];
+          if (isChecked) row.classList.add("done");
+
+          const input = document.createElement("input");
+          input.type = "checkbox";
+          input.id = "cb-" + item.id;
+          input.checked = isChecked;
+          input.dataset.id = item.id;
+
+          const label = document.createElement("label");
+          label.htmlFor = input.id;
+          label.innerHTML = `${escapeHtml(item.text)}<span class="item-id">${escapeHtml(item.id)}</span>`;
+
+          input.addEventListener("change", () => {
+            checked[item.id] = input.checked;
+            row.classList.toggle("done", input.checked);
+            saveState();
+            updateProgress();
+          });
+
+          row.appendChild(input);
+          row.appendChild(label);
+          itemsWrap.appendChild(row);
+        });
+
+        details.appendChild(summary);
+        details.appendChild(itemsWrap);
+        frag.appendChild(details);
+      });
+      checklistEl.appendChild(frag);
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function updateProgress() {
+      let total = 0;
+      let done = 0;
+      CATEGORIES.forEach((cat) => {
+        let cDone = 0;
+        cat.items.forEach((item) => {
+          total += 1;
+          if (checked[item.id]) {
+            done += 1;
+            cDone += 1;
+          }
+        });
+        const countEl = document.querySelector(`[data-cat-count="${cat.id}"]`);
+        const barEl = document.querySelector(`[data-cat-bar="${cat.id}"]`);
+        if (countEl) countEl.textContent = `${cDone} / ${cat.items.length}`;
+        if (barEl) barEl.style.width = cat.items.length ? `${(cDone / cat.items.length) * 100}%` : "0%";
+      });
+      const pct = total ? Math.round((done / total) * 100) : 0;
+      overallPct.textContent = pct + "%";
+      overallCount.textContent = `${done} / ${total}`;
+      overallBar.style.width = pct + "%";
+      document.title = `KeepBalance — ${pct}% готовности`;
+    }
+
+    document.getElementById("expandAll").addEventListener("click", () => {
+      document.querySelectorAll("details.category").forEach((d) => { d.open = true; });
+    });
+
+    document.getElementById("collapseAll").addEventListener("click", () => {
+      document.querySelectorAll("details.category").forEach((d) => { d.open = false; });
+    });
+
+    document.getElementById("expandIncomplete").addEventListener("click", () => {
+      document.querySelectorAll("details.category").forEach((details) => {
+        const catId = details.dataset.categoryId;
+        const cat = CATEGORIES.find((c) => c.id === catId);
+        if (!cat) return;
+        const incomplete = cat.items.some((item) => !checked[item.id]);
+        details.open = incomplete;
+      });
+    });
+
+    document.getElementById("exportBtn").addEventListener("click", () => {
+      const payload = {
+        version: 1,
+        app: "KeepBalance",
+        exportedAt: new Date().toISOString(),
+        checked: { ...checked }
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `keepbalance-checklist-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      showToast("JSON экспортирован");
+    });
+
+    document.getElementById("importFile").addEventListener("change", async (ev) => {
+      const file = ev.target.files && ev.target.files[0];
+      ev.target.value = "";
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        if (!data || typeof data !== "object" || !data.checked || typeof data.checked !== "object") {
+          throw new Error("Неверный формат");
+        }
+        const known = new Set();
+        CATEGORIES.forEach((c) => c.items.forEach((i) => known.add(i.id)));
+        const next = {};
+        Object.keys(data.checked).forEach((id) => {
+          if (known.has(id) && data.checked[id]) next[id] = true;
+        });
+        checked = next;
+        document.querySelectorAll(".item input[type=checkbox]").forEach((input) => {
+          const id = input.dataset.id;
+          const on = !!checked[id];
+          input.checked = on;
+          input.closest(".item").classList.toggle("done", on);
+        });
+        saveState();
+        updateProgress();
+        showToast("Импорт выполнен");
+      } catch (e) {
+        showToast("Ошибка импорта");
+        console.warn(e);
+      }
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      if (!confirm("Сбросить все отметки чеклиста?")) return;
+      checked = {};
+      document.querySelectorAll(".item input[type=checkbox]").forEach((input) => {
+        input.checked = false;
+        input.closest(".item").classList.remove("done");
+      });
+      saveState();
+      updateProgress();
+      showToast("Сброшено");
+    });
+
+    loadState();
+    build();
+    renderSavedAt();
+    updateProgress();
+  </script>
+</body>
+</html>
