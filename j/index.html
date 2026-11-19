@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Приглашение в KeepBalance</title>
+  <meta name="description" content="Откройте KeepBalance, чтобы присоединиться к пространству партнёра." />
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #F7F4EF;
+      --bg2: #EFE8DF;
+      --text: #1E293B;
+      --dim: #64748B;
+      --accent: #C45C26;
+      --glass: rgba(255,255,255,0.72);
+      --border: rgba(30,41,59,0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      font-family: Manrope, system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(900px 520px at 88% 6%, rgba(196,92,38,0.16), transparent 58%),
+        radial-gradient(700px 480px at 8% 88%, rgba(196,92,38,0.08), transparent 55%),
+        linear-gradient(180deg, var(--bg), var(--bg2));
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .card {
+      width: min(420px, 100%);
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 28px 24px 24px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 18px 40px rgba(30, 41, 59, 0.08);
+      text-align: center;
+    }
+    .brand {
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--dim);
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 28px;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+    }
+    p {
+      margin: 0;
+      color: var(--dim);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .code-wrap {
+      margin: 22px 0 18px;
+      padding: 16px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.7);
+      border: 1px solid var(--border);
+    }
+    .code-label {
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 8px;
+    }
+    .code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      word-break: break-all;
+    }
+    .actions {
+      display: grid;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    a.btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: 14px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 15px;
+    }
+    a.btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .hint {
+      margin-top: 18px;
+      font-size: 13px;
+      color: var(--dim);
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body>
+  <main class="card" id="card">
+    <div class="brand">KeepBalance</div>
+    <h1 id="title">Приглашение</h1>
+    <p id="desc">Загрузка…</p>
+  </main>
+  <script>
+    (function () {
+      function escapeHtml(value) {
+        return String(value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      var params = new URLSearchParams(window.location.search);
+      var code = (params.get("c") || params.get("code") || "").trim();
+      if (!code) {
+        var parts = window.location.pathname.split("/").filter(Boolean);
+        var jIdx = parts.map(function (p) { return p.toLowerCase(); }).indexOf("j");
+        if (jIdx >= 0 && jIdx + 1 < parts.length) {
+          code = decodeURIComponent(parts[jIdx + 1] || "").trim();
+        }
+      }
+
+      var card = document.getElementById("card");
+      var title = document.getElementById("title");
+      var desc = document.getElementById("desc");
+
+      if (!code) {
+        title.textContent = "Приглашение";
+        desc.textContent = "В ссылке нет кода. Попросите партнёра прислать приглашение ещё раз.";
+        return;
+      }
+
+      var deepLink = "keepbalance://join?code=" + encodeURIComponent(code);
+      var safeCode = escapeHtml(code);
+      title.textContent = "Вас пригласили";
+      desc.textContent = "Откройте приложение, чтобы присоединиться к пространству партнёра.";
+      card.insertAdjacentHTML(
+        "beforeend",
+        '<div class="code-wrap">' +
+          '<div class="code-label">Код приглашения</div>' +
+          '<div class="code">' + safeCode + "</div>" +
+        "</div>" +
+        '<div class="actions">' +
+          '<a class="btn btn-primary" id="open-app" href="' + deepLink + '">Открыть в KeepBalance</a>' +
+        "</div>" +
+        '<p class="hint">Если приложение не открылось: KeepBalance → Партнёр → введите код вручную.</p>'
+      );
+
+      setTimeout(function () {
+        try { window.location.href = deepLink; } catch (e) {}
+      }, 250);
+    })();
+  </script>
+</body>
+</html>
